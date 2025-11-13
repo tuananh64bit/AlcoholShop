@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
-<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <jsp:include page="../includes/header.jsp" />
 <jsp:include page="../includes/topmenu.jsp" />
@@ -115,12 +115,19 @@
                                             <td><strong>${message.subject}</strong></td>
                                             <td>
                                                 <div class="message-preview">
-                                                        ${message.message.length() > 50 ? message.message.substring(0, 50) + '...' : message.message}
+                                                    <c:choose>
+                                                        <c:when test="${fn:length(message.message) > 50}">
+                                                            ${fn:substring(message.message, 0, 50)}...
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            ${message.message}
+                                                        </c:otherwise>
+                                                    </c:choose>
                                                 </div>
                                             </td>
                                             <td>
-                                                <fmt:formatDate value="${message.createdAt}" pattern="MMM dd, yyyy" />
-                                                <br><small class="text-muted"><fmt:formatDate value="${message.createdAt}" pattern="HH:mm" /></small>
+                                                <fmt:formatDate value="${message.createdAtAsDate}" pattern="MMM dd, yyyy" />
+                                                <br><small class="text-muted"><fmt:formatDate value="${message.createdAtAsDate}" pattern="HH:mm" /></small>
                                             </td>
                                             <td>
                                                 <span class="badge ${message.status == 'NEW' ? 'bg-warning' : message.status == 'READ' ? 'bg-info' : 'bg-success'}">${message.status}</span>

@@ -33,10 +33,10 @@
 
                             <dt class="col-sm-3">Message</dt>
                             <dd class="col-sm-9" style="white-space:pre-wrap;">${message.message}</dd>
-
+0
                             <dt class="col-sm-3">Received</dt>
                             <dd class="col-sm-9">
-                                <fmt:formatDate value="${message.createdAt}" pattern="MMM dd, yyyy HH:mm" />
+                                <fmt:formatDate value="${message.createdAtAsDate}" pattern="MMM dd, yyyy HH:mm" />
                             </dd>
                         </dl>
                     </c:if>
@@ -50,4 +50,3 @@
 </div>
 
 <jsp:include page="../includes/footer.jsp" />
-

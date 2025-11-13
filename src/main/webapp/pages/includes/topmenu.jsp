@@ -127,7 +127,7 @@
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/contact">
+                                        <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/contacts">
                                             <i class="fas fa-envelope me-2"></i>Messages
                                         </a>
                                     </li>

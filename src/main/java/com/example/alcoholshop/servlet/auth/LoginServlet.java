@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Login servlet to handle user authentication
@@ -31,24 +30,7 @@ public class LoginServlet extends HttpServlet {
 
     private UserDAO userDAO;
 
-    // Simple in-memory cache: username -> CachedUser
-    private static final ConcurrentHashMap<String, CachedUser> loginCache = new ConcurrentHashMap<>();
-    // TTL for cached entries (milliseconds) - 10 minutes
-    private static final long CACHE_TTL_MS = Duration.ofMinutes(10).toMillis();
-
-    private static class CachedUser {
-        final UserAccount user;
-        final long expiryMillis;
-
-        CachedUser(UserAccount user, long expiryMillis) {
-            this.user = user;
-            this.expiryMillis = expiryMillis;
-        }
-
-        boolean isExpired() {
-            return System.currentTimeMillis() > expiryMillis;
-        }
-    }
+    // Note: in-memory login cache removed to avoid stale credential issues
 
     @Override
     public void init() throws ServletException {
@@ -100,15 +82,8 @@ public class LoginServlet extends HttpServlet {
         }
 
         try {
-            // Try cache first
-            UserAccount user = getCachedUser(username.trim());
-            if (user == null) {
-                // Find user by username from DB
-                user = userDAO.findByUsername(username.trim());
-                if (user != null) {
-                    cacheUser(user);
-                }
-            }
+            // Always query DB for user to ensure latest data
+            UserAccount user = userDAO.findByUsername(username.trim());
 
             if (user == null) {
                 logger.warn("Login attempt with non-existent username: " + username);
@@ -122,8 +97,7 @@ public class LoginServlet extends HttpServlet {
             // Verify password
             if (!BCrypt.checkpw(password, user.getPasswordHash())) {
                 logger.warn("Login attempt with invalid password for user: " + username);
-                // On invalid password, consider evicting cached entry to avoid locked outdated cache
-                loginCache.remove(username.trim());
+                // no in-memory cache to evict; simply return error
                 errors.put("password", "Invalid username or password");
                 request.setAttribute("errors", errors);
                 request.setAttribute("username", username);
@@ -192,21 +166,5 @@ public class LoginServlet extends HttpServlet {
             request.setAttribute("error", "Login failed. Please try again later.");
             request.getRequestDispatcher("/pages/auth/login.jsp").forward(request, response);
         }
-    }
-
-    private UserAccount getCachedUser(String username) {
-        CachedUser cached = loginCache.get(username);
-        if (cached == null) return null;
-        if (cached.isExpired()) {
-            loginCache.remove(username);
-            return null;
-        }
-        return cached.user;
-    }
-
-    private void cacheUser(UserAccount user) {
-        if (user == null || user.getUsername() == null) return;
-        long expiry = System.currentTimeMillis() + CACHE_TTL_MS;
-        loginCache.put(user.getUsername(), new CachedUser(user, expiry));
     }
 }

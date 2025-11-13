@@ -1,6 +1,8 @@
 package com.example.alcoholshop.model;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 
 /**
  * ContactMessage model class representing contact form submissions
@@ -12,6 +14,7 @@ public class ContactMessage {
     private String phone;
     private String subject;
     private String message;
+    private String status; // NEW / READ / REPLIED etc.
     private LocalDateTime createdAt;
     
     // Constructors
@@ -66,6 +69,14 @@ public class ContactMessage {
         this.subject = subject;
     }
     
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
     public String getMessage() {
         return message;
     }
@@ -82,6 +93,14 @@ public class ContactMessage {
         this.createdAt = createdAt;
     }
     
+    /**
+     * Return createdAt as java.util.Date for JSTL fmt:formatDate compatibility
+     */
+    public Date getCreatedAtAsDate() {
+        if (this.createdAt == null) return null;
+        return Date.from(this.createdAt.atZone(ZoneId.systemDefault()).toInstant());
+    }
+
     /**
      * Get formatted creation date
      */
@@ -116,4 +135,3 @@ public class ContactMessage {
                 '}';
     }
 }
-
