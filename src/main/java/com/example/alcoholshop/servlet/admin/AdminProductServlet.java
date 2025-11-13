@@ -9,16 +9,24 @@ import com.example.alcoholshop.model.Category;
 import com.example.alcoholshop.model.UserAccount;
 import com.example.alcoholshop.util.ValidationUtil;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +34,7 @@ import java.util.Map;
 /**
  * Admin product management servlet
  */
+@MultipartConfig
 @WebServlet("/admin/products")
 public class AdminProductServlet extends HttpServlet {
     private static final Logger logger = LoggerFactory.getLogger(AdminProductServlet.class);
@@ -84,6 +93,10 @@ public class AdminProductServlet extends HttpServlet {
             throws IOException {
         List<Category> categories = categoryDAO.findAll();
         request.setAttribute("categories", categories);
+
+        // provide list of image filenames available under /static/images
+        List<String> imageFiles = listImageFiles();
+        request.setAttribute("imageFiles", imageFiles);
         try {
             request.getRequestDispatcher("/pages/admin/product-create.jsp").forward(request, response);
         } catch (ServletException e) {
@@ -173,6 +186,10 @@ public class AdminProductServlet extends HttpServlet {
 
              request.setAttribute("product", product);
              request.setAttribute("categories", categories);
+
+            // provide list of image filenames available under /static/images
+            List<String> imageFiles = listImageFiles();
+            request.setAttribute("imageFiles", imageFiles);
             try {
                 request.getRequestDispatcher("/pages/admin/product-edit.jsp").forward(request, response);
             } catch (ServletException e) {
@@ -185,6 +202,35 @@ public class AdminProductServlet extends HttpServlet {
              response.sendRedirect(request.getContextPath() + "/admin/products");
          }
      }
+
+    /**
+     * List image filenames under webapp/static/images
+     */
+    private List<String> listImageFiles() {
+        List<String> images = new ArrayList<>();
+        try {
+            String realPath = getServletContext().getRealPath("/static/images/products");
+            if (realPath != null) {
+                File dir = new File(realPath);
+                if (dir.exists() && dir.isDirectory()) {
+                    File[] files = dir.listFiles();
+                    if (files != null) {
+                        for (File f : files) {
+                            if (f.isFile()) {
+                                String name = f.getName().toLowerCase();
+                                if (name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png") || name.endsWith(".gif")) {
+                                    images.add(f.getName());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Unable to list images in /static/images", e);
+        }
+        return images;
+    }
 
     /**
      * Create new product
@@ -202,6 +248,33 @@ public class AdminProductServlet extends HttpServlet {
         String categoryIdStr = request.getParameter("categoryId");
         String alcoholPercentageStr = request.getParameter("alcoholPercentage");
         
+        // Handle optional uploaded image file: form field name `imageFile`
+        try {
+            Part imagePart = request.getPart("imageFile");
+            if (imagePart != null && imagePart.getSize() > 0) {
+                String submitted = Path.of(imagePart.getSubmittedFileName()).getFileName().toString();
+                // save to webapp/static/images/products
+                String imagesDir = getServletContext().getRealPath("/static/images/products");
+                if (imagesDir != null) {
+                    File dir = new File(imagesDir);
+                    if (!dir.exists()) {
+                        if (!dir.mkdirs()) {
+                            logger.warn("Could not create images directory: {}", imagesDir);
+                        }
+                    }
+                    Path target = dir.toPath().resolve(submitted);
+                    try (InputStream in = imagePart.getInputStream()) {
+                        Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+                        image = submitted; // set image filename for DB
+                    } catch (IOException e) {
+                        logger.warn("Failed to save uploaded image", e);
+                    }
+                }
+            }
+        } catch (IllegalStateException | IOException | ServletException e) {
+            logger.debug("No image uploaded or upload failed", e);
+        }
+
         Map<String, String> errors = new HashMap<>();
         
         // Validate input
@@ -221,6 +294,9 @@ public class AdminProductServlet extends HttpServlet {
             
             List<Category> categories = categoryDAO.findAll();
             request.setAttribute("categories", categories);
+            // also provide imageFiles for the select
+            List<String> imageFiles = listImageFiles();
+            request.setAttribute("imageFiles", imageFiles);
             try {
                 request.getRequestDispatcher("/pages/admin/product-create.jsp").forward(request, response);
             } catch (ServletException e) {
@@ -283,7 +359,33 @@ public class AdminProductServlet extends HttpServlet {
             String image = request.getParameter("image");
             String categoryIdStr = request.getParameter("categoryId");
             String alcoholPercentageStr = request.getParameter("alcoholPercentage");
-            
+
+            // Handle optional uploaded image file: form field name `imageFile`
+            try {
+                Part imagePart = request.getPart("imageFile");
+                if (imagePart != null && imagePart.getSize() > 0) {
+                    String submitted = Path.of(imagePart.getSubmittedFileName()).getFileName().toString();
+                    String imagesDir = getServletContext().getRealPath("/static/images/products");
+                    if (imagesDir != null) {
+                        File dir = new File(imagesDir);
+                        if (!dir.exists()) {
+                            if (!dir.mkdirs()) {
+                                logger.warn("Could not create images directory: {}", imagesDir);
+                            }
+                        }
+                        Path target = dir.toPath().resolve(submitted);
+                        try (InputStream in = imagePart.getInputStream()) {
+                            Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+                            image = submitted; // set image filename for DB
+                        } catch (IOException e) {
+                            logger.warn("Failed to save uploaded image", e);
+                        }
+                    }
+                }
+            } catch (IllegalStateException | IOException | ServletException e) {
+                logger.debug("No image uploaded or upload failed", e);
+            }
+
             Map<String, String> errors = new HashMap<>();
             
             // Validate input
@@ -291,8 +393,39 @@ public class AdminProductServlet extends HttpServlet {
                            alcoholPercentageStr, errors);
             
             if (!errors.isEmpty()) {
+                // Forward back to edit form with errors and current values
                 request.setAttribute("errors", errors);
-                response.sendRedirect(request.getContextPath() + "/admin/products?action=edit&id=" + productId);
+                Product product = new Product();
+                product.setId(productId);
+                product.setCode(code);
+                product.setName(name);
+                product.setDescription(description);
+                try {
+                    product.setPrice(new BigDecimal(priceStr));
+                } catch (Exception ex) { /* ignore */ }
+                try {
+                    product.setStock(Integer.parseInt(stockStr));
+                } catch (Exception ex) { /* ignore */ }
+                product.setImage(image);
+                try {
+                    product.setCategoryId(Integer.parseInt(categoryIdStr));
+                } catch (Exception ex) { /* ignore */ }
+                try {
+                    product.setAlcoholPercentage(new BigDecimal(alcoholPercentageStr));
+                } catch (Exception ex) { /* ignore */ }
+
+                List<Category> categories = categoryDAO.findAll();
+                request.setAttribute("categories", categories);
+                request.setAttribute("product", product);
+                // provide imageFiles for the select
+                List<String> imageFiles = listImageFiles();
+                request.setAttribute("imageFiles", imageFiles);
+                try {
+                    request.getRequestDispatcher("/pages/admin/product-edit.jsp").forward(request, response);
+                } catch (ServletException e) {
+                    logger.error("ServletException forwarding to product edit", e);
+                    throw new IOException(e);
+                }
                 return;
             }
             
@@ -309,7 +442,10 @@ public class AdminProductServlet extends HttpServlet {
             product.setDescription(description);
             product.setPrice(new BigDecimal(priceStr));
             product.setStock(Integer.parseInt(stockStr));
-            product.setImage(image);
+            // Only update image if a new filename was provided (select) or upload succeeded
+            if (image != null && !image.trim().isEmpty()) {
+                product.setImage(image);
+            }
             product.setCategoryId(Integer.parseInt(categoryIdStr));
             product.setAlcoholPercentage(new BigDecimal(alcoholPercentageStr));
             
@@ -366,42 +502,49 @@ public class AdminProductServlet extends HttpServlet {
     private void validateProduct(String code, String name, String description, String priceStr,
                                String stockStr, String categoryIdStr, String alcoholPercentageStr,
                                Map<String, String> errors) {
-        
         // Validate code
         if (code == null || code.trim().isEmpty()) {
             errors.put("code", "Product code is required");
         } else if (code.trim().length() < 3) {
             errors.put("code", "Product code must be at least 3 characters");
         }
-        
+
         // Validate name
         if (name == null || name.trim().isEmpty()) {
             errors.put("name", "Product name is required");
         } else if (name.trim().length() < 3) {
             errors.put("name", "Product name must be at least 3 characters");
         }
-        
+
         // Validate description
         if (description == null || description.trim().isEmpty()) {
             errors.put("description", "Product description is required");
         } else if (description.trim().length() < 10) {
             errors.put("description", "Product description must be at least 10 characters");
         }
-        
+
         // Validate price
         if (priceStr == null || priceStr.trim().isEmpty()) {
             errors.put("price", "Price is required");
-        } else if (!ValidationUtil.isValidPrice(priceStr)) {
-            errors.put("price", "Invalid price format");
+        } else {
+            try {
+                new BigDecimal(priceStr);
+                // optional: use ValidationUtil.isValidPrice(priceStr) if available
+                if (!ValidationUtil.isValidPrice(priceStr)) {
+                    errors.put("price", "Invalid price format");
+                }
+            } catch (Exception e) {
+                errors.put("price", "Invalid price format");
+            }
         }
-        
+
         // Validate stock
         if (stockStr == null || stockStr.trim().isEmpty()) {
             errors.put("stock", "Stock is required");
         } else if (!ValidationUtil.isValidStock(stockStr)) {
             errors.put("stock", "Invalid stock format");
         }
-        
+
         // Validate category
         if (categoryIdStr == null || categoryIdStr.trim().isEmpty()) {
             errors.put("categoryId", "Category is required");
@@ -415,7 +558,7 @@ public class AdminProductServlet extends HttpServlet {
                 errors.put("categoryId", "Invalid category format");
             }
         }
-        
+
         // Validate alcohol percentage
         if (alcoholPercentageStr == null || alcoholPercentageStr.trim().isEmpty()) {
             errors.put("alcoholPercentage", "Alcohol percentage is required");
@@ -424,4 +567,3 @@ public class AdminProductServlet extends HttpServlet {
         }
     }
 }
-

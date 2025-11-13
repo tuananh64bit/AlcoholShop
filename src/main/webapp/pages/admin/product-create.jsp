@@ -62,7 +62,7 @@
                         <div class="alert alert-success">${success}</div>
                     </c:if>
 
-                    <form action="${pageContext.request.contextPath}/admin/products?action=create" method="post">
+                    <form action="${pageContext.request.contextPath}/admin/products?action=create" method="post" enctype="multipart/form-data">
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="code" class="form-label text-gold">Product Code</label>
@@ -98,8 +98,32 @@
                             </div>
 
                             <div class="col-12">
-                                <label for="image" class="form-label text-gold">Image filename or URL</label>
-                                <input type="text" id="image" name="image" class="form-control" value="${image}" placeholder="image.jpg or https://..." />
+                                <label class="form-label text-gold">Product image</label>
+
+                                <!-- existing images select -->
+                                <div class="mb-2">
+                                    <label for="imageSelect" class="form-label small text-muted">Choose existing image</label>
+                                    <select id="imageSelect" name="image" class="form-select">
+                                        <option value="">-- none --</option>
+                                        <c:forEach var="img" items="${imageFiles}">
+                                            <option value="${img}" ${img == image ? 'selected' : ''}>${img}</option>
+                                        </c:forEach>
+                                    </select>
+                                </div>
+
+                                <!-- or upload new image -->
+                                <div class="mb-2">
+                                    <label for="imageFile" class="form-label small text-muted">Or upload image (jpg/png/gif)</label>
+                                    <input type="file" id="imageFile" name="imageFile" accept="image/*" class="form-control" />
+                                </div>
+
+                                <!-- preview -->
+                                <div class="mt-2">
+                                    <label class="form-label small text-muted">Preview</label>
+                                    <div>
+                                        <img id="imagePreview" src="${pageContext.request.contextPath}/static/images/products/${image}" alt="Preview" style="max-height:120px; display: ${empty image ? 'none' : 'inline-block'};" />
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="col-12">
@@ -150,3 +174,38 @@
 
 <jsp:include page="../includes/footer.jsp" />
 
+<script>
+    (function(){
+        const select = document.getElementById('imageSelect');
+        const fileInput = document.getElementById('imageFile');
+        const preview = document.getElementById('imagePreview');
+
+        function showPreviewFromSelect() {
+            const v = select.value;
+            if (!v) { preview.style.display = 'none'; preview.src = '';
+            } else {
+                preview.src = '${pageContext.request.contextPath}/static/images/products/' + v;
+                preview.style.display = 'inline-block';
+            }
+        }
+
+        select && select.addEventListener('change', function(){
+            // clear file input when selecting existing image
+            if (fileInput) fileInput.value = '';
+            showPreviewFromSelect();
+        });
+
+        fileInput && fileInput.addEventListener('change', function(e){
+            const f = e.target.files && e.target.files[0];
+            if (!f) return;
+            const reader = new FileReader();
+            reader.onload = function(ev){
+                preview.src = ev.target.result;
+                preview.style.display = 'inline-block';
+            };
+            reader.readAsDataURL(f);
+            // clear select so server knows to use uploaded file
+            if (select) select.value = '';
+        });
+    })();
+</script>

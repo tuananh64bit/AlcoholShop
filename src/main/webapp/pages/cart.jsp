@@ -33,8 +33,10 @@
                                     <div class="cart-item border-bottom p-4" data-aos="fade-up">
                                         <div class="row align-items-center">
                                             <div class="col-md-2">
-                                                <img src="https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" 
-                                                     alt="${item.productName}" class="img-fluid rounded">
+                                                <c:set var="imgSrc" value="${pageContext.request.contextPath}/static/images/products/${item.productImage}" />
+                                                <img src="${imgSrc}"
+                                                     alt="${item.productName}" class="img-fluid rounded"
+                                                     onerror="this.onerror=null;this.src='${pageContext.request.contextPath}/static/images/placeholder.jpg'" />
                                             </div>
                                             <div class="col-md-4">
                                                 <h6 class="mb-1">${item.productName}</h6>

@@ -62,11 +62,11 @@
                                         <c:when test="${not empty product.image}">
                                             <img src="${pageContext.request.contextPath}/static/images/products/${product.image}" 
                                                  alt="${product.name}" 
-                                                 onerror="this.src='https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'">
+                                                 onerror="this.onerror=null;this.src='${pageContext.request.contextPath}/static/images/placeholder.jpg'" />
                                         </c:when>
                                         <c:otherwise>
-                                            <img src="https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" 
-                                                 alt="${product.name}">
+                                            <img src="${pageContext.request.contextPath}/static/images/placeholder.jpg"
+                                                 alt="${product.name}" />
                                         </c:otherwise>
                                     </c:choose>
                                     <div class="product-badge">

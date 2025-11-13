@@ -59,7 +59,7 @@
                         </div>
                     </c:if>
 
-                    <form action="${pageContext.request.contextPath}/admin/products?action=update" method="post">
+                    <form action="${pageContext.request.contextPath}/admin/products?action=update" method="post" enctype="multipart/form-data">
                         <input type="hidden" name="id" value="${product.id}" />
                         <div class="row g-3">
                             <div class="col-md-6">
@@ -96,8 +96,29 @@
                             </div>
 
                             <div class="col-12">
-                                <label for="image" class="form-label text-gold">Image filename or URL</label>
-                                <input type="text" id="image" name="image" class="form-control" value="${product.image}" placeholder="image.jpg or https://..." />
+                                <label class="form-label text-gold">Product image</label>
+
+                                <div class="mb-2">
+                                    <label for="imageSelect" class="form-label small text-muted">Choose existing image</label>
+                                    <select id="imageSelect" name="image" class="form-select">
+                                        <option value="">-- none --</option>
+                                        <c:forEach var="img" items="${imageFiles}">
+                                            <option value="${img}" ${img == product.image ? 'selected' : ''}>${img}</option>
+                                        </c:forEach>
+                                    </select>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="imageFile" class="form-label small text-muted">Or upload image (jpg/png/gif)</label>
+                                    <input type="file" id="imageFile" name="imageFile" accept="image/*" class="form-control" />
+                                </div>
+
+                                <div class="mt-2">
+                                    <label class="form-label small text-muted">Preview</label>
+                                    <div>
+                                        <img id="imagePreview" src="${pageContext.request.contextPath}/static/images/products/${product.image}" alt="Preview" style="max-height:120px; display: ${empty product.image ? 'none' : 'inline-block'};" />
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="col-12">
@@ -146,5 +167,38 @@
     }
 </style>
 
-<jsp:include page="../includes/footer.jsp" />
+<script>
+    (function(){
+        const select = document.getElementById('imageSelect');
+        const fileInput = document.getElementById('imageFile');
+        const preview = document.getElementById('imagePreview');
 
+        function showPreviewFromSelect() {
+            const v = select.value;
+            if (!v) { preview.style.display = 'none'; preview.src = '';
+            } else {
+                preview.src = '${pageContext.request.contextPath}/static/images/products/' + v;
+                preview.style.display = 'inline-block';
+            }
+        }
+
+        select && select.addEventListener('change', function(){
+            if (fileInput) fileInput.value = '';
+            showPreviewFromSelect();
+        });
+
+        fileInput && fileInput.addEventListener('change', function(e){
+            const f = e.target.files && e.target.files[0];
+            if (!f) return;
+            const reader = new FileReader();
+            reader.onload = function(ev){
+                preview.src = ev.target.result;
+                preview.style.display = 'inline-block';
+            };
+            reader.readAsDataURL(f);
+            if (select) select.value = '';
+        });
+    })();
+</script>
+
+<jsp:include page="../includes/footer.jsp" />

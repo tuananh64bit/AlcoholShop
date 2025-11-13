@@ -20,10 +20,10 @@
                                         <c:when test="${not empty product.image}">
                                             <img src="${pageContext.request.contextPath}/static/images/products/${product.image}"
                                                  class="img-fluid rounded-lg" alt="${product.name}"
-                                                 onerror="this.src='https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=600&q=80'">
+                                                 onerror="this.src='${pageContext.request.contextPath}/static/images/placeholder.jpg'">
                                         </c:when>
                                         <c:otherwise>
-                                            <img src="https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=600&q=80"
+                                            <img src="${pageContext.request.contextPath}/static/images/placeholder.jpg"
                                                  class="img-fluid rounded-lg" alt="${product.name}">
                                         </c:otherwise>
                                     </c:choose>
@@ -145,10 +145,10 @@
                                                     <c:when test="${not empty relatedProduct.image}">
                                                         <img src="${pageContext.request.contextPath}/static/images/products/${relatedProduct.image}"
                                                              alt="${relatedProduct.name}"
-                                                             onerror="this.src='https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=300&q=80'">
+                                                             onerror="this.src='${pageContext.request.contextPath}/static/images/placeholder.jpg'">
                                                     </c:when>
                                                     <c:otherwise>
-                                                        <img src="https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=300&q=80"
+                                                        <img src="${pageContext.request.contextPath}/static/images/placeholder.jpg"
                                                              alt="${relatedProduct.name}">
                                                     </c:otherwise>
                                                 </c:choose>

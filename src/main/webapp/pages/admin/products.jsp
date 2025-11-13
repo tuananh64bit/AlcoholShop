@@ -133,9 +133,17 @@
                                         data-status="${product.active ? 'active' : 'inactive'}">
                                         <td>${product.id}</td>
                                         <td>
-                                            <img src="${pageContext.request.contextPath}/static/images/products/${product.image}"
-                                                 alt="${product.name}" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;"
-                                                 onerror="this.src='https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80'">
+                                            <c:choose>
+                                                <c:when test="${not empty product.image}">
+                                                    <img src="${pageContext.request.contextPath}/static/images/products/${product.image}"
+                                                         alt="${product.name}" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;"
+                                                         onerror="this.onerror=null;this.src='${pageContext.request.contextPath}/static/images/placeholder.jpg'" />
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <img src="${pageContext.request.contextPath}/static/images/placeholder.jpg"
+                                                         alt="${product.name}" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;" />
+                                                </c:otherwise>
+                                            </c:choose>
                                         </td>
                                         <td>
                                             <div>
