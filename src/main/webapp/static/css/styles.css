@@ -4,6 +4,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* Root Variables - Luxury Color Palette */
+/* Chiều cao topmenu của bạn, chỉnh nếu cần */
+:root {
+    --topmenu-height: 70px; /* hoặc 60–80 tùy header */
+}
+
+/* Đẩy sidebar xuống dưới topmenu để không bị che */
+.sidebar {
+    margin-top: var(--topmenu-height) !important;
+}
+
 :root {
     /* Primary Colors */
     --primary-dark: #1E1E1E;
